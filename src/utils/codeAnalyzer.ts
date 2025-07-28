@@ -153,59 +153,94 @@ export class CodeAnalyzer {
   }
 
   static generateFlowchartDiagram(structure: CodeStructure): string {
+    if (structure.functions.length === 0) {
+      return `flowchart TD
+    Start([Program Start])
+    NoFunctions[No Functions Found]
+    Start --> NoFunctions
+    
+    classDef startNode fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px
+    classDef errorNode fill:#ffcdd2,stroke:#d32f2f,stroke-width:2px
+    class Start startNode
+    class NoFunctions errorNode`;
+    }
+
     let diagram = 'flowchart TD\n';
     
     // Add main entry point
-    diagram += '    Start([Program Start])\n';
+    diagram += '    Start([Program Start])\n\n';
     
     // Add functions as nodes
     structure.functions.forEach((func, index) => {
       const nodeId = `F${index}`;
-      diagram += `    ${nodeId}[${func.name}()]\n`;
+      diagram += `    ${nodeId}["${func.name}()"]\n`;
     });
+    diagram += '\n';
     
     // Add connections based on function calls
+    let hasConnections = false;
     structure.functions.forEach((func, index) => {
       const nodeId = `F${index}`;
       
       if (func.name === 'main') {
         diagram += `    Start --> ${nodeId}\n`;
+        hasConnections = true;
       }
       
       func.calls.forEach(call => {
         const calledFuncIndex = structure.functions.findIndex(f => f.name === call);
         if (calledFuncIndex !== -1) {
           diagram += `    ${nodeId} --> F${calledFuncIndex}\n`;
+          hasConnections = true;
         }
       });
     });
+
+    // If no connections found, connect all functions to start
+    if (!hasConnections) {
+      structure.functions.forEach((func, index) => {
+        diagram += `    Start --> F${index}\n`;
+      });
+    }
     
     // Add styling
-    diagram += '\n    classDef functionNode fill:#e1f5fe,stroke:#01579b,stroke-width:2px\n';
+    diagram += '\n    classDef functionNode fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#000\n';
     diagram += '    classDef startNode fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px\n';
     diagram += '    class Start startNode\n';
     
     structure.functions.forEach((_, index) => {
-      diagram += `    class F${index} functionNode\n`;
+      if (index < structure.functions.length - 1) {
+        diagram += `    class F${index} functionNode\n`;
+      } else {
+        diagram += `    class F${index} functionNode`;
+      }
     });
     
     return diagram;
   }
 
   static generateClassDiagram(structure: CodeStructure): string {
+    if (structure.classes.length === 0) {
+      return `classDiagram
+    class NoClasses {
+        +message : "No classes found in uploaded files"
+        +suggestion : "Upload C++ files with class definitions"
+    }`;
+    }
+
     let diagram = 'classDiagram\n';
     
     structure.classes.forEach(cls => {
-      diagram += `    class ${cls.name} {\n`;
+      diagram += `    class ${cls.name.replace(/[^a-zA-Z0-9_]/g, '_')} {\n`;
       
       // Add member variables
       cls.members.forEach(member => {
-        diagram += `        +${member}\n`;
+        diagram += `        +${member.replace(/[^a-zA-Z0-9_]/g, '_')}\n`;
       });
       
       // Add methods
       cls.methods.forEach(method => {
-        diagram += `        +${method}()\n`;
+        diagram += `        +${method.replace(/[^a-zA-Z0-9_]/g, '_')}()\n`;
       });
       
       diagram += '    }\n\n';
@@ -215,22 +250,37 @@ export class CodeAnalyzer {
   }
 
   static generateCallGraphDiagram(structure: CodeStructure): string {
+    if (structure.functions.length === 0) {
+      return `graph LR
+    NoFunctions["No Functions Found"]
+    Upload["Upload C/C++ files with functions"]
+    NoFunctions --> Upload`;
+    }
+
     let diagram = 'graph LR\n';
     
     structure.functions.forEach((func, index) => {
       const nodeId = `F${index}`;
-      diagram += `    ${nodeId}["${func.name}()"]\n`;
+      diagram += `    ${nodeId}["${func.name.replace(/[^a-zA-Z0-9_]/g, '_')}()"]\n`;
     });
+    diagram += '\n';
     
+    let hasConnections = false;
     structure.functions.forEach((func, index) => {
       const nodeId = `F${index}`;
       func.calls.forEach(call => {
         const calledFuncIndex = structure.functions.findIndex(f => f.name === call);
         if (calledFuncIndex !== -1) {
           diagram += `    ${nodeId} --> F${calledFuncIndex}\n`;
+          hasConnections = true;
         }
       });
     });
+
+    // If no connections, show isolated functions
+    if (!hasConnections) {
+      diagram += '\n    %% No function calls detected - showing isolated functions\n';
+    }
     
     return diagram;
   }

@@ -180,7 +180,7 @@ export const CodeDiagrams: React.FC<CodeDiagramsProps> = ({ files, isDarkMode })
             </div>
 
             {/* Diagram */}
-            <div className="border rounded-lg overflow-hidden">
+            <div className={`border rounded-lg overflow-hidden ${themeClasses.border}`}>
               <MermaidDiagram chart={getCurrentDiagram()} isDarkMode={isDarkMode} />
             </div>
 
