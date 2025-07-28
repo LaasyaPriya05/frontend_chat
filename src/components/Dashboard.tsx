@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { FileUpload } from './FileUpload';
 import { UploadedFiles } from './UploadedFiles';
+import { CodeDiagrams } from './CodeDiagrams';
 import { Header } from './Header';
 import { FileData } from '../services/api';
 import { useDarkMode } from '../context/DarkModeContext';
 
 export const Dashboard: React.FC = () => {
   const [hasFiles, setHasFiles] = useState(false);
+  const [files, setFiles] = useState<FileData[]>([]);
   const [loading, setLoading] = useState(true);
   const { isDarkMode, toggleDarkMode } = useDarkMode();
 
@@ -39,8 +41,9 @@ export const Dashboard: React.FC = () => {
     try {
       const savedFiles = localStorage.getItem('uploadedFiles');
       if (savedFiles) {
-        const files = JSON.parse(savedFiles);
-        setHasFiles(files.length > 0);
+        const parsedFiles = JSON.parse(savedFiles);
+        setFiles(parsedFiles);
+        setHasFiles(parsedFiles.length > 0);
       }
     } catch (error) {
       console.error('Error checking files:', error);
@@ -61,6 +64,7 @@ export const Dashboard: React.FC = () => {
 
       localStorage.setItem('uploadedFiles', JSON.stringify(fileData));
       setHasFiles(true);
+      setFiles(fileData);
     } catch (error) {
       console.error('Error uploading files:', error);
       throw error;
@@ -103,6 +107,7 @@ export const Dashboard: React.FC = () => {
                 onClick={() => {
                   localStorage.removeItem('uploadedFiles');
                   setHasFiles(false);
+                  setFiles([]);
                 }}
                 className={`px-4 py-2 rounded-lg transition-all text-white ${themeClasses.buttonSecondary}`}
               >
@@ -112,11 +117,12 @@ export const Dashboard: React.FC = () => {
             
             <UploadedFiles isDarkMode={isDarkMode} />
             
+            <CodeDiagrams files={files} isDarkMode={isDarkMode} />
+            
             <div className={`mt-8 p-6 rounded-lg ${themeClasses.cardBg} border ${themeClasses.border}`}>
               <h2 className="text-xl font-semibold mb-4">Upload More Files</h2>
               <FileUpload 
                 onFilesUploaded={handleFilesUploaded} 
-                isDarkMode={isDarkMode} 
               />
             </div>
           </div>

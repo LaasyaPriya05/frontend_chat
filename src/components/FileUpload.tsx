@@ -3,7 +3,6 @@ import { Upload, File, CheckCircle, AlertCircle } from 'lucide-react';
 import { useDarkMode } from '../context/DarkModeContext';
 
 interface FileUploadProps {
-  onFilesUploaded: (files: File[]) => Promise<void>;
 }
 
 export const FileUpload: React.FC<FileUploadProps> = ({ onFilesUploaded }) => {
